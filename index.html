@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#202125" />
+    <title>FLORAMA — регистрация</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="landing">
+      <div class="background" aria-hidden="true"></div>
+      <div class="veil" aria-hidden="true"></div>
+
+      <button class="theme-switch" type="button" aria-label="Переключить цветовую тему" aria-pressed="true">
+        <span class="theme-switch__sun" aria-hidden="true">☼</span>
+        <span class="theme-switch__track" aria-hidden="true"><span></span></span>
+        <span class="theme-switch__moon" aria-hidden="true">☾</span>
+      </button>
+
+      <section class="registration" aria-labelledby="brand-title">
+        <header class="brand entrance entrance--first">
+          <h1 id="brand-title">FLORAMA</h1>
+          <p>Мы любим нашу планету, и следим за ней</p>
+        </header>
+
+        <form class="form entrance entrance--second" id="signup-form">
+          <div class="form__grid">
+            <label>
+              <span>Имя</span>
+              <input type="text" name="firstName" autocomplete="given-name" aria-label="Имя" />
+            </label>
+            <label>
+              <span>Фамилия</span>
+              <input type="text" name="lastName" autocomplete="family-name" aria-label="Фамилия" />
+            </label>
+          </div>
+
+          <label>
+            <span>Почта</span>
+            <input type="email" name="email" autocomplete="email" aria-label="Почта" required />
+          </label>
+
+          <label class="code-field">
+            <span>Код</span>
+            <button class="send-code" type="button" aria-label="Отправить код на почту">отправить код на почту</button>
+            <input type="text" name="code" inputmode="numeric" autocomplete="one-time-code" aria-label="Код подтверждения" />
+          </label>
+          <p class="form__notice" aria-live="polite"></p>
+        </form>
+
+        <footer class="form-footer entrance entrance--third">
+          <a href="#login">Уже есть аккаунт</a>
+          <button class="submit" form="signup-form" type="submit">Зарегистрироваться</button>
+        </footer>
+      </section>
+    </main>
+    <script src="script.js"></script>
+  </body>
+</html>
