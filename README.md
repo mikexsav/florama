@@ -38,11 +38,20 @@ cd backend && python worker.py
 Обучение выполняется только на строках с известным `primary_ndvi` и искусственно скрывает часть известных точек при валидации:
 
 ```bash
-python -m backend.train --input data/raw/train_dataset.csv --output backend/models
-python -m backend.infer --input "C:/Users/maxim/Downloads/test_features (1).csv" --output artifacts/submission_organizers.csv
+python backend/train.py --input data/raw/train_dataset.csv --output backend/models
+python backend/infer.py --input data/raw/test_features.csv --output artifacts/submission.csv
 ```
 
-`submission_organizers.csv` содержит **только** строки `is_synthetic_gap=true` и колонки `anon_polygon_id,date,primary_ndvi_pred`.
+`submission.csv` содержит **только** строки `is_synthetic_gap=true` и колонки `anon_polygon_id,date,primary_ndvi_true`. Название последней колонки — требование валидатора; её значения являются прогнозами модели.
+
+Для проверки и обучения модели с отдельными экспертами Sentinel-2, Landsat и MODIS:
+
+```bash
+OMP_NUM_THREADS=2 python backend/benchmark_sources.py --input data/raw/train_dataset.csv --output artifacts/source_benchmark
+OMP_NUM_THREADS=2 python backend/train_sources.py --input data/raw/train_dataset.csv --benchmark artifacts/source_benchmark/report.json --output backend/models --expert-weight 0.5
+```
+
+Проверка делит участки на четыре непересекающиеся группы и исключает контрольные участки из обучения и расчёта обучающих признаков. Перед расчётом признаков маскируются все динамические значения контрольной строки. Файлы приватных ответов не используются. Локальный RMSE не является результатом платформы. Формула баллов: `GapScore = 30 * max(0, 1 - RMSE / 0.10)`.
 
 ## Научная добросовестность
 

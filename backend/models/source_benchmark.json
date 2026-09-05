@@ -1,94 +1,5 @@
 {
-  "rows": 99955,
-  "observed": 30519,
-  "polygons": 39,
-  "maskedFraction": 0.15,
-  "selectedWeight": 0.5,
-  "selectedMethod": "expert_blend_0.5",
-  "splits": {
-    "new_polygons": {
-      "old_recipe": {
-        "rmse": 0.07362040519083153,
-        "mae": 0.04895326970701291,
-        "n": 4636,
-        "gapScore": 7.91
-      },
-      "v14": {
-        "rmse": 0.06800722441398302,
-        "mae": 0.043789143760477205,
-        "n": 4636,
-        "gapScore": 9.6
-      },
-      "extended": {
-        "rmse": 0.06604812463093072,
-        "mae": 0.041825417226785525,
-        "n": 4636,
-        "gapScore": 10.19
-      },
-      "experts": {
-        "rmse": 0.0648738566220078,
-        "mae": 0.03977394902116947,
-        "n": 4636,
-        "gapScore": 10.54
-      },
-      "expert_blend_0.25": {
-        "rmse": 0.06427823783742774,
-        "mae": 0.04011066922393727,
-        "n": 4636,
-        "gapScore": 10.72
-      },
-      "expert_blend_0.5": {
-        "rmse": 0.06347583247071724,
-        "mae": 0.039148000120831014,
-        "n": 4636,
-        "gapScore": 10.96
-      },
-      "expert_blend_0.75": {
-        "rmse": 0.06367749298111429,
-        "mae": 0.039041880838863965,
-        "n": 4636,
-        "gapScore": 10.9
-      }
-    }
-  },
-  "aggregate": {
-    "old_recipe": {
-      "rmse": 0.07362040519083153,
-      "mae": 0.04895326970701291,
-      "n": 4636
-    },
-    "v14": {
-      "rmse": 0.06800722441398302,
-      "mae": 0.043789143760477205,
-      "n": 4636
-    },
-    "extended": {
-      "rmse": 0.06604812463093072,
-      "mae": 0.041825417226785525,
-      "n": 4636
-    },
-    "experts": {
-      "rmse": 0.0648738566220078,
-      "mae": 0.03977394902116947,
-      "n": 4636
-    },
-    "expert_blend_0.25": {
-      "rmse": 0.06427823783742774,
-      "mae": 0.04011066922393727,
-      "n": 4636
-    },
-    "expert_blend_0.5": {
-      "rmse": 0.06347583247071724,
-      "mae": 0.039148000120831014,
-      "n": 4636
-    },
-    "expert_blend_0.75": {
-      "rmse": 0.06367749298111429,
-      "mae": 0.039041880838863965,
-      "n": 4636
-    }
-  },
-  "validationFolds": {
+  "folds": {
     "0": {
       "old_recipe": {
         "rmse": 0.07331513989289964,
@@ -238,26 +149,42 @@
       }
     }
   },
-  "evaluationNote": "Four disjoint AOI folds; held-out fields excluded from training features; fresh masks; no private ground truth.",
-  "model": {
-    "algorithm": "Temporal residual + satellite-source experts",
-    "trainingExamples": 27395
+  "aggregate": {
+    "old_recipe": {
+      "rmse": 0.07362040519083153,
+      "mae": 0.04895326970701291,
+      "n": 4636
+    },
+    "v14": {
+      "rmse": 0.06800722441398302,
+      "mae": 0.043789143760477205,
+      "n": 4636
+    },
+    "extended": {
+      "rmse": 0.06604812463093072,
+      "mae": 0.041825417226785525,
+      "n": 4636
+    },
+    "experts": {
+      "rmse": 0.0648738566220078,
+      "mae": 0.03977394902116947,
+      "n": 4636
+    },
+    "expert_blend_0.25": {
+      "rmse": 0.06427823783742774,
+      "mae": 0.04011066922393727,
+      "n": 4636
+    },
+    "expert_blend_0.5": {
+      "rmse": 0.06347583247071724,
+      "mae": 0.039148000120831014,
+      "n": 4636
+    },
+    "expert_blend_0.75": {
+      "rmse": 0.06367749298111429,
+      "mae": 0.039041880838863965,
+      "n": 4636
+    }
   },
-  "provenance": {
-    "trainSha256": "a75e530d0fb51581ad6800f84b3875233778801491f02236917862faf9b424ec",
-    "maskSeeds": [
-      142,
-      243,
-      344,
-      445,
-      546,
-      647
-    ],
-    "maskFraction": 0.15,
-    "examples": 27395,
-    "python": "3.14.4",
-    "numpy": "2.5.2",
-    "pandas": "3.0.1",
-    "sklearn": "1.9.0"
-  }
+  "validation": "Four disjoint AOI folds; held-out fields excluded from training features; fresh masks; no private ground truth."
 }

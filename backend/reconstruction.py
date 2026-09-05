@@ -92,6 +92,24 @@ def build_features(frame):
             neighbors(x,y,col,feat)
         parts.append(pd.DataFrame(feat,index=group.index))
     result = pd.concat(parts).sort_index().replace([np.inf,-np.inf],np.nan)
+    # Орбитальные циклы и доступность источника помогают определить, какой спутник
+    # сформировал primary_ndvi в полностью скрытой строке.
+    phase_dates = pd.to_datetime(frame.date)
+    for period in [2,3,5,7,8,10,16]:
+        phase = phase_dates.dt.dayofyear.to_numpy()%period
+        result['phase_sin_'+str(period)] = np.sin(2*np.pi*phase/period)
+        result['phase_cos_'+str(period)] = np.cos(2*np.pi*phase/period)
+    date_aoi_count = frame.groupby('date').anon_polygon_id.nunique().clip(lower=1)
+    for sensor in ['s2_ndvi','landsat_ndvi','modis_ndvi']:
+        visible = pd.to_numeric(frame.get(sensor,pd.Series(np.nan,index=frame.index)),errors='coerce').notna()
+        date_count = visible.groupby(frame.date).sum()
+        result[sensor+'_date_fraction'] = (
+            frame.date.map(date_count).to_numpy(dtype=float)
+            / frame.date.map(date_aoi_count).to_numpy(dtype=float)
+        )
+        season_fraction = visible.groupby([frame.anon_polygon_id,phase_dates.dt.year]).mean()
+        season_keys = pd.MultiIndex.from_arrays([frame.anon_polygon_id,phase_dates.dt.year])
+        result[sensor+'_season_fraction'] = season_fraction.reindex(season_keys).to_numpy(dtype=float)
     # Соседние AOI выбираются по корреляции ВИДИМЫХ наблюдений, не по скрытым меткам.
     # Это трансдуктивная интерполяция: пригодные наблюдения других полей доступны и при инференсе.
     panel = frame.pivot(index='date',columns='anon_polygon_id',values='primary_ndvi')
@@ -141,6 +159,12 @@ def predict_frame(frame, model_path=None, method='ensemble'):
     if path.exists():
         import joblib
         artifact = joblib.load(path)
+        if artifact.get('kind') == 'source_experts_v1':
+            from source_model import extended_features,predict_bundle
+            enriched=extended_features(frame.reset_index(drop=True),feats)
+            general,experts=predict_bundle(artifact['bundle'],enriched)
+            blend=artifact['expertWeight']
+            return np.clip((1-blend)*general+blend*experts,-1,1)
         correction = artifact['model'].predict(feats[artifact['columns']])
         weight = artifact.get('weight',1.)
         return np.clip(linear + weight*correction, -1,1)
