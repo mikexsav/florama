@@ -1,63 +1,81 @@
 <!doctype html>
 <html lang="ru">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#202125" />
-    <title>FLORAMA — регистрация</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css" />
-  </head>
-  <body>
-    <main class="landing">
-      <div class="background" aria-hidden="true"></div>
-      <div class="veil" aria-hidden="true"></div>
-
-      <button class="theme-switch" type="button" aria-label="Переключить цветовую тему" aria-pressed="true">
-        <span class="theme-switch__sun" aria-hidden="true">☼</span>
-        <span class="theme-switch__track" aria-hidden="true"><span></span></span>
-        <span class="theme-switch__moon" aria-hidden="true">☾</span>
-      </button>
-
-      <section class="registration" aria-labelledby="brand-title">
-        <header class="brand entrance entrance--first">
-          <h1 id="brand-title">FLORAMA</h1>
-          <p>Мы любим нашу планету, и следим за ней</p>
-        </header>
-
-        <form class="form entrance entrance--second" id="signup-form">
-          <div class="form__grid">
-            <label>
-              <span>Имя</span>
-              <input type="text" name="firstName" autocomplete="given-name" aria-label="Имя" />
-            </label>
-            <label>
-              <span>Фамилия</span>
-              <input type="text" name="lastName" autocomplete="family-name" aria-label="Фамилия" />
-            </label>
-          </div>
-
-          <label>
-            <span>Почта</span>
-            <input type="email" name="email" autocomplete="email" aria-label="Почта" required />
-          </label>
-
-          <label class="code-field">
-            <span>Код</span>
-            <button class="send-code" type="button" aria-label="Отправить код на почту">отправить код на почту</button>
-            <input type="text" name="code" inputmode="numeric" autocomplete="one-time-code" aria-label="Код подтверждения" />
-          </label>
-          <p class="form__notice" aria-live="polite"></p>
-        </form>
-
-        <footer class="form-footer entrance entrance--third">
-          <a href="#login">Уже есть аккаунт</a>
-          <button class="submit" form="signup-form" type="submit">Зарегистрироваться</button>
-        </footer>
-      </section>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#202125" />
+  <title>FLORAMA — мониторинг территорий</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+  <link rel="stylesheet" href="styles.css?v=8" />
+</head>
+<body>
+  <svg class="icon-sprite" aria-hidden="true">
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.3"/><rect x="14" y="3" width="7" height="7" rx="1.3"/><rect x="3" y="14" width="7" height="7" rx="1.3"/><rect x="14" y="14" width="7" height="7" rx="1.3"/></symbol>
+    <symbol id="i-field" viewBox="0 0 24 24"><path d="M11.9 3.1v17.8M4.1 7.7c2.5.1 5.3-1.7 7.8-4.6 2.5 2.9 5.3 4.7 7.8 4.6M3.6 16.3c3.4 0 5.7 1.5 8.3 4.5 2.6-3 4.9-4.5 8.3-4.5"/><path d="M6.6 8.2c-2.1 2.2-2.7 4.6-1.8 7.1.9 2.6 3.3 4.3 7.1 5.2"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="m6 16 4-5 3 3 5-7"/><path d="M18 7h-3v3"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.3 2.3-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-3.2v-.2a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L6 17l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H4.6v-3.2h.2a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L6 7.8 8.3 5l.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.6v-.2h3.2v.2a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1 2.3 2.3-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2V14H21a1.7 1.7 0 0 0-1.6 1Z"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c.5-4.2 3.1-6.3 8-6.3s7.5 2.1 8 6.3"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20.7 15.3A8.5 8.5 0 0 1 8.7 3.3 8.5 8.5 0 1 0 20.7 15.3Z"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M20 10c0 5.4-8 11-8 11S4 15.4 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></symbol>
+    <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l-3 2"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="m12 3 10 18H2L12 3Z"/><path d="M12 9v5M12 17.4v.1"/></symbol>
+    <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5M3 16l9 5 9-5"/></symbol>
+    <symbol id="i-more" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.3" fill="currentColor"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/><circle cx="12" cy="19" r="1.3" fill="currentColor"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h15M14 6l6 6-6 6"/></symbol>
+    <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8" cy="9" r="1.5"/><path d="m5 18 5-5 3.5 3.5 2-2 3.5 3.5"/></symbol>
+    <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 18h10a4 4 0 0 0 .9-7.9A6 6 0 0 0 6.1 9 4.5 4.5 0 0 0 7 18Z"/></symbol>
+    <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 3.6 5.5 3.6 9S14.5 18.5 12 21c-2.5-2.5-3.6-5.5-3.6-9S9.5 5.5 12 3Z"/></symbol>
+    <symbol id="i-logout" viewBox="0 0 24 24"><path d="M10 5H5v14h5M14 8l4 4-4 4M8 12h10"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4.2 4L19 6.5"/></symbol>
+  </svg>
+  <section id="auth-screen" class="auth-screen" aria-labelledby="auth-title">
+    <div class="auth-screen__imagery" aria-hidden="true"></div>
+    <button class="auth-theme" type="button" aria-label="Переключить тему"><svg><use href="#i-moon"/></svg></button>
+    <div class="auth-card">
+      <a class="auth-logo" href="#">FLORAMA</a>
+      <p class="auth-kicker">Спутниковый мониторинг территорий</p>
+      <h1 id="auth-title">Создайте аккаунт</h1>
+      <p id="auth-description">Начните отслеживать состояние своих полей и получать данные со спутников.</p>
+      <form id="auth-form" class="auth-form" novalidate>
+        <div class="auth-form__names"><label>Имя<input name="firstName" autocomplete="given-name" /></label><label>Фамилия<input name="lastName" autocomplete="family-name" /></label></div>
+        <label>Почта<input name="email" type="email" autocomplete="email" placeholder="you@example.com" required /></label>
+        <label class="auth-code">Код<button id="send-code" type="button" aria-label="Отправить код на почту">Отправить код</button><input name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000" required /></label>
+        <p id="auth-notice" class="auth-notice" aria-live="polite"></p>
+        <button id="auth-submit" class="button-primary auth-submit" type="submit">Зарегистрироваться</button>
+      </form>
+      <button id="auth-mode-switch" class="auth-mode-switch" type="button">Уже есть аккаунт</button>
+    </div>
+  </section>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Основная навигация">
+      <a class="logo" href="#dashboard" aria-label="FLORAMA — главная">FLORAMA</a>
+      <nav class="main-nav">
+        <button class="nav-link is-active" type="button" data-view="dashboard"><svg><use href="#i-grid"/></svg><span>Панель управления</span></button>
+        <button class="nav-link" type="button" data-view="polygons"><svg><use href="#i-field"/></svg><span>Полигоны</span></button>
+        <button class="nav-link" type="button" data-view="analytics"><svg><use href="#i-chart"/></svg><span>Аналитика</span></button>
+        <button class="nav-link" type="button" data-view="settings"><svg><use href="#i-settings"/></svg><span>Настройки</span></button>
+      </nav>
+      <div class="sidebar-story" aria-hidden="true"><div class="sidebar-story__shade"></div><p>Больше,<br />чем просто снимки</p><span>Реальные данные для устойчивого будущего</span></div>
+    </aside>
+    <main class="workspace">
+      <header class="topbar">
+        <button class="mobile-menu" type="button" aria-label="Открыть меню"><span></span><span></span><span></span></button><div class="topbar__spacer"></div>
+        <div class="account-wrap"><button class="account-button" type="button" aria-expanded="false" aria-controls="account-menu"><span class="avatar avatar--small"><svg><use href="#i-user"/></svg></span><span class="account-name">yourmail@gmail.com</span></button><div id="account-menu" class="account-menu" hidden><strong>Михаил Савченко</strong><span>mmmsss717171@gmail.com</span><button type="button" data-view="settings"><svg><use href="#i-settings"/></svg>Настройки профиля</button><button type="button" data-logout><svg><use href="#i-logout"/></svg>Выйти</button></div></div>
+        <button class="round-button theme-button" type="button" aria-label="Переключить тему"><svg><use href="#i-moon"/></svg></button>
+      </header>
+      <section id="screen" class="screen" aria-live="polite"></section>
     </main>
-    <script src="script.js?v=4"></script>
-  </body>
+  </div>
+  <div class="modal-backdrop" hidden><section class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"><button class="modal__close" type="button" aria-label="Закрыть"><span></span><span></span></button><div id="modal-content"></div></section></div>
+  <div class="toast" role="status" aria-live="polite"></div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="script.js?v=8"></script>
+</body>
 </html>

@@ -1,11 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
   <component name="ChangeListManager">
-    <list default="true" id="de527104-7338-4053-8e60-4de6cb223f31" name="Changes" comment="" />
+    <list default="true" id="de527104-7338-4053-8e60-4de6cb223f31" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/../Florama сайт/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../Florama сайт/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Florama сайт/frontend/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/../Florama сайт/frontend/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Florama сайт/frontend/script.js" beforeDir="false" afterPath="$PROJECT_DIR$/../Florama сайт/frontend/script.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Florama сайт/frontend/styles.css" beforeDir="false" afterPath="$PROJECT_DIR$/../Florama сайт/frontend/styles.css" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../Florama сайт" />
+  </component>
+  <component name="GithubDefaultAccount">
+    <option name="defaultAccountId" value="2569b6be-574c-4c62-9f6b-610bfea1a7b4" />
   </component>
   <component name="ProjectColorInfo"><![CDATA[{
   "associatedIndex": 0
@@ -19,7 +33,12 @@
   "keyToString": {
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
+    "git-widget-placeholder": "preprod",
     "junie.onboarding.icon.badge.shown": "true",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
     "settings.editor.selected.configurable": "org.jetbrains.plugins.github.ui.GithubSettingsConfigurable",
     "vue.rearranger.settings.migration": "true"
@@ -39,7 +58,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1767471996301</updated>
-      <workItem from="1788544855309" duration="17000" />
+      <workItem from="1788544855309" duration="2686000" />
     </task>
     <servers />
   </component>
