@@ -40,8 +40,8 @@ def test_submission_contract(tmp_path):
     result=submission(source,dest,model_path=tmp_path/'missing.joblib')
     out=pd.read_csv(dest)
     assert result['rows']==1
-    assert list(out.columns)==['anon_polygon_id','date','primary_ndvi_pred']
-    assert out.primary_ndvi_pred.iloc[0]==pytest.approx(.3)
+    assert list(out.columns)==['anon_polygon_id','date','primary_ndvi_true']
+    assert out.primary_ndvi_true.iloc[0]==pytest.approx(.3)
 
 
 def test_no_data_is_not_normal():

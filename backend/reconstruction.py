@@ -152,7 +152,9 @@ def submission(input_path, output_path, model_path=None):
     clean = masked(frame,mask)
     pred = predict_frame(clean,model_path)[mask]
     out = frame.loc[mask,['anon_polygon_id','date']].copy()
-    out['primary_ndvi_pred'] = pred
+    # Внешний валидатор принимает целевую колонку под этим именем.
+    # Значения по-прежнему являются восстановленными оценками модели.
+    out['primary_ndvi_true'] = pred
     if not np.isfinite(pred).all() or len(out) != int(mask.sum()):
         raise ValueError('Не все контрольные точки восстановлены.')
     Path(output_path).parent.mkdir(parents=True,exist_ok=True)
