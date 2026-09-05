@@ -90,6 +90,21 @@ def test_jobs_owned_and_dates(env):
     assert c.delete('/api/polygons/'+p,headers=h).status_code==400
 
 
+def test_research_map_uses_anonymous_schema_without_coordinates(env):
+    app,_=env; c,_=register(env)
+    directory=Path(app.config['DATA_DIR'])/'research'; directory.mkdir()
+    (directory/'train_dataset.csv').write_text(
+        'anon_polygon_id,date,primary_ndvi,s2_ndvi,s2_evi,s2_ndwi,crop_type\n'
+        'AOI-0001,2024-06-01,0.61,0.63,0.41,0.08,пшеница\n'
+        'AOI-0002,2024-06-01,0.24,0.26,0.17,-0.12,подсолнечник\n',encoding='utf-8')
+    response=c.get('/api/research/map?date=2024-06-01&layer=primary_ndvi')
+    assert response.status_code==200,response.json
+    assert response.json['spatialMode']=='anonymous-grid'
+    assert response.json['totalAoi']==2
+    assert response.json['cells'][0]['value']==0.61
+    assert 'координат' in response.json['note']
+
+
 def test_polygon_csv_import_is_atomic(env):
     c,h=register(env)
     geometry=json.dumps(GEOM,ensure_ascii=False).replace('"','""')

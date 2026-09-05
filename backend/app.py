@@ -8,6 +8,7 @@ import re
 import secrets
 import time
 import uuid
+from functools import lru_cache
 from datetime import date, timedelta
 from pathlib import Path
 from flask import Flask, g, jsonify, request, send_file
@@ -18,6 +19,41 @@ from auth import auth, require_user, payload, text_field, public_user, limit
 from store import transaction, migrate, dumps
 from geo import validate_geometry
 from providers import geocode, farmland
+
+
+RESEARCH_LAYERS={
+    'primary_ndvi':'NDVI (основной ряд)',
+    's2_ndvi':'Sentinel-2 NDVI',
+    'landsat_ndvi':'Landsat NDVI',
+    'modis_ndvi':'MODIS NDVI',
+    's2_evi':'Sentinel-2 EVI',
+    's2_ndwi':'Sentinel-2 NDWI',
+}
+
+
+def research_number(value):
+    try:
+        number=float(value)
+        return number if -1 <= number <= 1 else None
+    except (TypeError,ValueError):
+        return None
+
+
+@lru_cache(maxsize=2)
+def research_map_source(path_text,mtime_ns):
+    """Загружает только значения для анонимной пространственной схемы набора."""
+    by_date={}; crops={}
+    with Path(path_text).open(encoding='utf-8-sig',newline='') as stream:
+        for row in csv.DictReader(stream):
+            aoi=(row.get('anon_polygon_id') or '').strip()
+            day=(row.get('date') or '').strip()
+            if not aoi or not day:
+                continue
+            crops[aoi]=(row.get('crop_type') or '').strip()
+            values={key:research_number(row.get(key)) for key in RESEARCH_LAYERS}
+            if any(value is not None for value in values.values()):
+                by_date.setdefault(day,[]).append({'id':aoi,'values':values,'crop':crops[aoi]})
+    return by_date,crops
 
 
 def csv_rows(upload):
@@ -332,6 +368,43 @@ def create_app(config=None):
     def research():
         path=Path(__file__).parent/'models'/'metrics.json'
         return jsonify(metrics=json.loads(path.read_text(encoding='utf-8')) if path.exists() else None)
+
+    @app.get('/api/research/map')
+    @require_user
+    def research_map():
+        dataset=Path(app.config['DATA_DIR'])/'research'/'train_dataset.csv'
+        if not dataset.exists():
+            raise NotFound('Набор для карты лаборатории ещё не загружен на сервер.')
+        layer=request.args.get('layer','primary_ndvi')
+        if layer not in RESEARCH_LAYERS:
+            raise BadRequest('Неизвестный слой карты.')
+        by_date,crops=research_map_source(str(dataset),dataset.stat().st_mtime_ns)
+        if not by_date:
+            raise NotFound('В наборе нет значений для отображения.')
+        dates=sorted(by_date)
+        selected=request.args.get('date') or dates[-1]
+        if selected not in by_date:
+            try:
+                requested=date.fromisoformat(selected)
+            except ValueError as exc:
+                raise BadRequest('Дата карты должна быть в формате YYYY-MM-DD.') from exc
+            selected=min(dates,key=lambda item:abs((date.fromisoformat(item)-requested).days))
+        cells=[]
+        for row in sorted(by_date[selected],key=lambda item:item['id']):
+            cells.append({'id':row['id'],'value':row['values'][layer],'crop':row['crop']})
+        return jsonify(
+            spatialMode='anonymous-grid',
+            note='Исходный файл не содержит координат или контуров. Схема показывает значения по анонимным AOI и не является географической картой.',
+            date=selected,
+            minDate=dates[0],
+            maxDate=dates[-1],
+            layer=layer,
+            layerLabel=RESEARCH_LAYERS[layer],
+            layers=[{'id':key,'label':label} for key,label in RESEARCH_LAYERS.items()],
+            cells=cells,
+            aoiIds=sorted(crops),
+            totalAoi=len(crops),
+        )
 
     @app.post('/api/client-errors')
     @require_user
