@@ -4,11 +4,11 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="de527104-7338-4053-8e60-4de6cb223f31" name="Changes" comment="">
+    <list default="true" id="de527104-7338-4053-8e60-4de6cb223f31" name="Changes" comment="zalupa">
       <change beforePath="$PROJECT_DIR$/../Florama сайт/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../Florama сайт/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Florama сайт/frontend/app.js" beforeDir="false" afterPath="$PROJECT_DIR$/../Florama сайт/frontend/app.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../Florama сайт/frontend/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/../Florama сайт/frontend/index.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Florama сайт/frontend/script.js" beforeDir="false" afterPath="$PROJECT_DIR$/../Florama сайт/frontend/script.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Florama сайт/frontend/styles.css" beforeDir="false" afterPath="$PROJECT_DIR$/../Florama сайт/frontend/styles.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Florama сайт/frontend/production.css" beforeDir="false" afterPath="$PROJECT_DIR$/../Florama сайт/frontend/production.css" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -58,11 +58,24 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1767471996301</updated>
-      <workItem from="1788544855309" duration="2686000" />
+      <workItem from="1788544855309" duration="5193000" />
     </task>
+    <task id="LOCAL-00001" summary="zalupa">
+      <option name="closed" value="true" />
+      <created>1788598018291</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1788598018291</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="zalupa" />
+    <option name="LAST_COMMIT_MESSAGE" value="zalupa" />
   </component>
 </project>
