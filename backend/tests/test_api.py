@@ -1,0 +1,89 @@
+import json
+import sys
+from pathlib import Path
+import pytest
+
+sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
+from app import create_app
+from store import transaction
+
+GEOM={'type':'Polygon','coordinates':[[[39.70,47.30],[39.71,47.30],[39.71,47.31],[39.70,47.31],[39.70,47.30]]]}
+
+
+@pytest.fixture
+def env(tmp_path,monkeypatch):
+    database=str(tmp_path/'test.sqlite3')
+    monkeypatch.setenv('DB_PATH',database)
+    sent={}
+    app=create_app({'TESTING':True,'DB_PATH':database,'DATA_DIR':str(tmp_path),'SECRET_KEY':'s'*64,'COOKIE_SECURE':False,'MAIL_SENDER':lambda mail,code:sent.update({mail:code})})
+    return app,sent
+
+
+def register(env,email='one@example.com'):
+    app,sent=env; client=app.test_client()
+    assert client.post('/api/auth/send-code',json={'email':email,'mode':'register'}).status_code==200
+    r=client.post('/api/auth/verify-code',json={'email':email,'mode':'register','code':sent[email],'firstName':'Тест','lastName':'Пользователь'})
+    assert r.status_code==200,r.json
+    return client,{'X-CSRF-Token':r.json['csrfToken']}
+
+
+def test_session_persistence_logout(env):
+    client,headers=register(env)
+    assert client.get('/api/auth/me').json['user']['email']=='one@example.com'
+    assert client.patch('/api/profile',json={'firstName':'Новое','lastName':'Имя'},headers=headers).status_code==200
+    assert client.get('/api/auth/me').json['user']['firstName']=='Новое'
+    assert client.post('/api/auth/logout',json={},headers=headers).status_code==200
+    assert client.get('/api/auth/me').status_code==401
+
+
+def test_ownership_and_csrf(env):
+    a,ha=register(env); b,hb=register(env,'two@example.com')
+    assert a.post('/api/polygons',json={'name':'Поле','geometry':GEOM}).status_code==403
+    r=a.post('/api/polygons',json={'name':'Поле','geometry':GEOM},headers=ha)
+    assert r.status_code==201,r.json
+    polygon=r.json['polygon']
+    assert polygon['area_ha']>0
+    assert len(a.get('/api/polygons').json['polygons'])==1
+    assert not b.get('/api/polygons').json['polygons']
+    assert b.delete('/api/polygons/'+polygon['id'],headers=hb).status_code==404
+    assert b.post('/api/polygons/'+polygon['id']+'/analyze',headers=hb,json={}).status_code==404
+    assert a.delete('/api/polygons/'+polygon['id'],headers=ha).status_code==200
+
+
+def test_otp_mode_and_replay(env):
+    app,sent=env; c=app.test_client(); mail='mode@example.com'
+    c.post('/api/auth/send-code',json={'email':mail,'mode':'register'})
+    assert c.post('/api/auth/verify-code',json={'email':mail,'mode':'login','code':sent[mail]}).status_code==400
+    data={'email':mail,'mode':'register','code':sent[mail],'firstName':'А','lastName':'Б'}
+    assert c.post('/api/auth/verify-code',json=data).status_code==200
+    assert c.post('/api/auth/verify-code',json=data).status_code==400
+
+
+def test_code_attempt_limit(env):
+    app,sent=env; c=app.test_client(); mail='limit@example.com'
+    c.post('/api/auth/send-code',json={'email':mail,'mode':'register'})
+    wrong='000000' if sent[mail]!='000000' else '111111'
+    data={'email':mail,'mode':'register','code':wrong,'firstName':'А','lastName':'Б'}
+    for _ in range(5):
+        assert c.post('/api/auth/verify-code',json=data).status_code==400
+    data['code']=sent[mail]
+    assert c.post('/api/auth/verify-code',json=data).status_code==400
+
+
+def test_errors_and_settings(env):
+    c,h=register(env)
+    assert c.get('/api/not-a-route').status_code==404
+    assert c.patch('/api/settings',headers=h,json={'restore':False}).json['settings']['restore'] is False
+    assert c.get('/api/settings').json['settings']['restore'] is False
+    assert c.post('/api/polygons',headers=h,json={'name':'bad','geometry':{'type':'Point','coordinates':[0,0]}}).status_code==400
+    assert c.post('/api/projects',headers={**h,'Origin':'https://evil.example'},json={'name':'X'}).status_code==403
+    assert c.post('/api/projects',headers=h,json=[]).status_code==400
+
+
+def test_jobs_owned_and_dates(env):
+    c,h=register(env)
+    p=c.post('/api/polygons',headers=h,json={'name':'P','geometry':GEOM}).json['polygon']['id']
+    assert c.post(f'/api/polygons/{p}/analyze',headers=h,json={'start':'2010-01-01'}).status_code==400
+    assert c.post(f'/api/polygons/{p}/analyze',headers=h,json={'start':'2025-05-01','end':'2025-07-01'}).status_code==202
+    assert c.get('/api/jobs').json['jobs'][0]['status']=='queued'
+    assert c.delete('/api/polygons/'+p,headers=h).status_code==400

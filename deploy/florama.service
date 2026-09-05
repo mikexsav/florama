@@ -1,0 +1,24 @@
+[Unit]
+Description=Florama application API
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=florama
+Group=florama
+WorkingDirectory=/opt/florama/backend
+EnvironmentFile=/etc/florama.env
+Environment=OMP_NUM_THREADS=2
+Environment=OPENBLAS_NUM_THREADS=2
+ExecStart=/opt/florama/venv-v2/bin/gunicorn --workers 2 --threads 2 --timeout 90 --bind 127.0.0.1:8000 app:create_app()
+Restart=always
+RestartSec=3
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/florama/data
+
+[Install]
+WantedBy=multi-user.target

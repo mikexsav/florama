@@ -1,6 +1,11 @@
+.runtime/
 __pycache__/
-*.py[cod]
+.pytest_cache/
 .env
-*.sqlite3
-data/
-
+*.sqlite3*
+data/raw/
+artifacts/specs/
+artifacts/browser/
+.venv/
+*.log
+node_modules/
