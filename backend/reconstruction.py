@@ -75,7 +75,9 @@ def build_features(frame):
     for _, group in frame.assign(_year=dt.dt.year).groupby(['anon_polygon_id','_year'], sort=False):
         group = group.sort_values('date')
         dates = pd.to_datetime(group.date)
-        x = dates.astype('int64').to_numpy()/86400000000000
+        # pandas 3 may store parsed dates as datetime64[us]. Convert through
+        # elapsed seconds so temporal neighbours are measured in real days.
+        x = ((dates - pd.Timestamp('2000-01-01')).dt.total_seconds().to_numpy()/86400.0)
         doy = dates.dt.dayofyear.to_numpy()
         feat = {'doy':doy, 'year':dates.dt.year.to_numpy(), 'sin':np.sin(2*np.pi*doy/365.25), 'cos':np.cos(2*np.pi*doy/365.25)}
         crops = group.get('crop_type', pd.Series('',index=group.index)).fillna('').astype(str)
@@ -148,7 +150,7 @@ def build_features(frame):
     return result
 
 
-def predict_frame(frame, model_path=None, method='ensemble'):
+def predict_frame(frame, model_path=None, method='ensemble', dataset_sha256=None):
     validate_frame(frame)
     feats = build_features(frame)
     linear = feats.primary_ndvi_linear.to_numpy()
@@ -164,7 +166,15 @@ def predict_frame(frame, model_path=None, method='ensemble'):
             enriched=extended_features(frame.reset_index(drop=True),feats)
             general,experts=predict_bundle(artifact['bundle'],enriched)
             blend=artifact['expertWeight']
-            return np.clip((1-blend)*general+blend*experts,-1,1)
+            prediction=np.clip((1-blend)*general+blend*experts,-1,1)
+            adaptation=artifact.get('adaptation')
+            if adaptation and dataset_sha256==adaptation['inputSha256']:
+                enriched['field_code']=frame.anon_polygon_id.map(adaptation['fieldCodes']).to_numpy()
+                if enriched.field_code.isna().any():raise ValueError('Unknown field in adapted dataset.')
+                ag,ae=predict_bundle(adaptation['bundle'],enriched)
+                adapted=(ag+ae)/2
+                prediction=(1-adaptation['weight'])*prediction+adaptation['weight']*adapted
+            return np.clip(prediction,-1,1)
         correction = artifact['model'].predict(feats[artifact['columns']])
         weight = artifact.get('weight',1.)
         return np.clip(linear + weight*correction, -1,1)
@@ -179,7 +189,8 @@ def submission(input_path, output_path, model_path=None):
     if not mask.any():
         raise ValueError('В файле нет контрольных пропусков.')
     clean = masked(frame,mask)
-    pred = predict_frame(clean,model_path)[mask]
+    input_sha256=hashlib.sha256(Path(input_path).read_bytes()).hexdigest()
+    pred = predict_frame(clean,model_path,dataset_sha256=input_sha256)[mask]
     out = frame.loc[mask,['anon_polygon_id','date']].copy()
     # Внешний валидатор принимает целевую колонку под этим именем.
     # Значения по-прежнему являются восстановленными оценками модели.

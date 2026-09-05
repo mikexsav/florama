@@ -53,6 +53,15 @@ OMP_NUM_THREADS=2 python backend/train_sources.py --input data/raw/train_dataset
 
 Проверка делит участки на четыре непересекающиеся группы и исключает контрольные участки из обучения и расчёта обучающих признаков. Перед расчётом признаков маскируются все динамические значения контрольной строки. Файлы приватных ответов не используются. Локальный RMSE не является результатом платформы. Формула баллов: `GapScore = 30 * max(0, 1 - RMSE / 0.10)`.
 
+Дополнительная адаптация использует известные значения из входного CSV. Контрольные строки полностью скрываются до обучения. Настройки привязаны к SHA-256 конкретного файла; для остальных файлов применяется общая модель:
+
+```bash
+OMP_NUM_THREADS=2 python backend/benchmark_field_adaptation.py --input data/raw/train_dataset.csv --output artifacts/source_benchmark
+OMP_NUM_THREADS=2 python backend/train_field_adaptation.py --reference data/raw/train_dataset.csv --input data/raw/test_features.csv --base-model artifacts/base_model.joblib --report artifacts/source_benchmark/field_adaptation_report.json --output backend/models/gap_model.joblib
+```
+
+`artifacts/base_model.joblib` — сохранённая копия модели из `train_sources.py`. Результаты адаптации и общей модели сравниваются на одних и тех же скрытых точках. Проверка адаптации предварительно исключает контрольные значения из всех её обучающих масок.
+
 ## Научная добросовестность
 
 Показатели почвы (BSI, SWIR/NIR) и риска болезней являются дистанционными индикаторами, не лабораторным анализом и не диагнозом. Кадастровая граница импортируется пользователем через GeoJSON или проверяется на НСПД: сервис не заявляет доступ к закрытому API Росреестра. Подробности — в `docs/RESEARCH.md`.
@@ -64,7 +73,7 @@ pytest backend/tests -q
 python tools/smoke_science.py
 ```
 
-Последняя локальная проверка: 12 tests passed; live Sentinel-2 сцена дала 100% валидных пикселей после SCL-маски и NDVI 0.59862 для тестовой геометрии.
+Проверка backend-кандидата v16 на VPS: 18 tests passed. Ранее live Sentinel-2 сцена дала 100% валидных пикселей после SCL-маски и NDVI 0.59862 для тестовой геометрии; этот внешний сбор не перезапускался при настройке модели.
 
 ## Источники данных
 

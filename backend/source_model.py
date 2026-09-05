@@ -68,23 +68,24 @@ def baselines(features):
     return linear,sensors
 
 
-def fit_bundle(features, target, labels, seed=42, experts=True):
+def fit_bundle(features, target, labels, seed=42, experts=True, sample_weight=None, categorical_features='from_dtype'):
     linear,candidates=baselines(features)
-    general=HistGradientBoostingRegressor(max_iter=600,max_leaf_nodes=31,l2_regularization=20,learning_rate=.035,early_stopping=False,random_state=seed)
-    general.fit(features,target-linear)
+    general=HistGradientBoostingRegressor(max_iter=600,max_leaf_nodes=31,l2_regularization=20,learning_rate=.035,early_stopping=False,random_state=seed,categorical_features=categorical_features)
+    general.fit(features,target-linear,sample_weight=sample_weight)
     bundle={'columns':list(features.columns),'general':general,'experts':[]}
     if experts:
-        classifier=HistGradientBoostingClassifier(max_iter=300,max_leaf_nodes=15,l2_regularization=12,learning_rate=.045,early_stopping=False,random_state=seed)
-        classifier.fit(features,labels)
+        classifier=HistGradientBoostingClassifier(max_iter=300,max_leaf_nodes=15,l2_regularization=12,learning_rate=.045,early_stopping=False,random_state=seed,categorical_features=categorical_features)
+        classifier.fit(features,labels,sample_weight=sample_weight)
         bundle['classifier']=classifier
         for source in range(3):
             keep=labels==source
-            model=HistGradientBoostingRegressor(max_iter=500,max_leaf_nodes=23,l2_regularization=18,learning_rate=.035,early_stopping=False,random_state=seed+source)
+            model=HistGradientBoostingRegressor(max_iter=500,max_leaf_nodes=23,l2_regularization=18,learning_rate=.035,early_stopping=False,random_state=seed+source,categorical_features=categorical_features)
             source_x=features.loc[keep]
             # Some bands never occur in a source subset. Remove empty/constant
             # columns using only training rows (also avoids empty-bin failures).
             useful=source_x.nunique(dropna=True)>1
-            model.fit(source_x.loc[:,useful],(target-candidates[:,source])[keep])
+            weights=None if sample_weight is None else sample_weight[keep]
+            model.fit(source_x.loc[:,useful],(target-candidates[:,source])[keep],sample_weight=weights)
             bundle['experts'].append(model)
     return bundle
 

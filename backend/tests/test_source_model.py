@@ -69,5 +69,12 @@ def test_source_artifact_prediction_and_legacy_compatibility(tmp_path):
         'classifier':FixedClassifier(),'experts':[FixedRegressor(.2) for _ in range(3)]}}
     path=tmp_path/'model.joblib';joblib.dump(artifact,path)
     assert predict_frame(frame,path)[1]==pytest.approx(.45)
+    artifact['adaptation']={'inputSha256':'verified-input','weight':.5,'fieldCodes':{'P':1},'bundle':{
+        'columns':list(enriched.columns),'general':FixedRegressor(.3),
+        'classifier':FixedClassifier(),'experts':[FixedRegressor(.4) for _ in range(3)]}}
+    joblib.dump(artifact,path)
+    assert predict_frame(frame,path,dataset_sha256='verified-input')[1]==pytest.approx(.55)
+    assert predict_frame(frame,path,dataset_sha256='different-input')[1]==pytest.approx(.45)
+    assert predict_frame(frame,path)[1]==pytest.approx(.45)
     joblib.dump({'columns':['primary_ndvi_linear'],'model':FixedRegressor(.1),'weight':.5},path)
     assert predict_frame(frame,path)[1]==pytest.approx(.35)

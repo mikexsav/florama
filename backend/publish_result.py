@@ -17,6 +17,7 @@ def main():
     parser.add_argument('--source-job',required=True)
     parser.add_argument('--model',required=True)
     parser.add_argument('--receipt',required=True)
+    parser.add_argument('--version',default='v15')
     args=parser.parse_args()
     with transaction() as conn:
         source=conn.execute("SELECT * FROM jobs WHERE id=? AND kind='batch'",(args.source_job,)).fetchone()
@@ -37,12 +38,12 @@ def main():
     assert np.isfinite(out.primary_ndvi_true).all() and out.primary_ndvi_true.between(-1,1).all()
     receipt={'jobId':job_id,'rows':len(out),'modelSha256':hashlib.sha256(Path(args.model).read_bytes()).hexdigest(),
         'inputSha256':hashlib.sha256(source_path.read_bytes()).hexdigest(),
-        'outputSha256':hashlib.sha256(output_path.read_bytes()).hexdigest(),'output':str(output_path),'modelVersion':'source-v15'}
-    result.update({'modelVersion':'source-v15','modelSha256':receipt['modelSha256']})
+        'outputSha256':hashlib.sha256(output_path.read_bytes()).hexdigest(),'output':str(output_path),'modelVersion':'source-'+args.version}
+    result.update({'modelVersion':receipt['modelVersion'],'modelSha256':receipt['modelSha256']})
     now=int(time.time())
     with transaction() as conn:
         conn.execute('INSERT INTO jobs(id,user_id,kind,payload,status,progress,message,result,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?)',
-            (job_id,source['user_id'],'batch',dumps({'input':str(input_path),'output':str(output_path)}),'done',100,'Готово · модель v15',dumps(result),now,now))
+            (job_id,source['user_id'],'batch',dumps({'input':str(input_path),'output':str(output_path)}),'done',100,'Готово · модель '+args.version,dumps(result),now,now))
     Path(args.receipt).write_text(json.dumps(receipt,indent=2),encoding='utf-8')
     print(json.dumps(receipt),flush=True)
 
