@@ -337,7 +337,7 @@ def create_app(config=None):
     @app.post('/api/batch')
     @require_user
     def batch():
-        limit('batch:'+str(g.user['id']),6,3600)
+        limit('batch:'+str(g.user['id']),30,3600)
         upload=request.files.get('file')
         if not upload or not upload.filename.lower().endswith('.csv'):
             raise BadRequest('Выберите CSV с контрольными пропусками.')
