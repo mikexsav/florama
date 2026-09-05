@@ -1,4 +1,5 @@
 import json
+import io
 import sys
 from pathlib import Path
 import pytest
@@ -87,3 +88,16 @@ def test_jobs_owned_and_dates(env):
     assert c.post(f'/api/polygons/{p}/analyze',headers=h,json={'start':'2025-05-01','end':'2025-07-01'}).status_code==202
     assert c.get('/api/jobs').json['jobs'][0]['status']=='queued'
     assert c.delete('/api/polygons/'+p,headers=h).status_code==400
+
+
+def test_polygon_csv_import_is_atomic(env):
+    c,h=register(env)
+    geometry=json.dumps(GEOM,ensure_ascii=False).replace('"','""')
+    valid=f'name;region;crop;geometry\nПоле 1;Ростовская область;пшеница;"{geometry}"\n'
+    r=c.post('/api/polygons/import-csv',headers=h,data={'file':(io.BytesIO(valid.encode()),'fields.csv')},content_type='multipart/form-data')
+    assert r.status_code==201,r.json
+    assert r.json['created']==1
+    invalid='name;west;south;east;north\nПоле 2;39;47;39.00001;47.00001\n'
+    r=c.post('/api/polygons/import-csv',headers=h,data={'file':(io.BytesIO(invalid.encode()),'bad.csv')},content_type='multipart/form-data')
+    assert r.status_code==400
+    assert len(c.get('/api/polygons').json['polygons'])==1

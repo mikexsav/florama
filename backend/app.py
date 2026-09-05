@@ -1,5 +1,7 @@
 """HTTP API кабинета. Все данные и аналитические решения принадлежат серверу."""
 import json
+import csv
+import io
 import logging
 import os
 import re
@@ -16,6 +18,47 @@ from auth import auth, require_user, payload, text_field, public_user, limit
 from store import transaction, migrate, dumps
 from geo import validate_geometry
 from providers import geocode, farmland
+
+
+def csv_rows(upload):
+    """Читает только компактный CSV участков, не создавая записи до полной валидации."""
+    raw=upload.read()
+    if len(raw)>3_000_000:
+        raise ValueError('CSV не должен превышать 3 МБ.')
+    try:
+        source=raw.decode('utf-8-sig')
+    except UnicodeDecodeError as exc:
+        raise ValueError('Сохраните CSV в UTF-8.') from exc
+    try:
+        dialect=csv.Sniffer().sniff(source[:4096],delimiters=',;\t')
+    except csv.Error:
+        dialect=csv.excel
+    rows=list(csv.DictReader(io.StringIO(source),dialect=dialect))
+    if not rows:
+        raise ValueError('CSV пуст или в нём нет заголовка.')
+    if len(rows)>50:
+        raise ValueError('За один импорт можно добавить не более 50 участков.')
+    result=[]
+    for index,row in enumerate(rows,start=2):
+        values={(key or '').strip().lower():str(value or '').strip() for key,value in row.items()}
+        geometry_raw=values.get('geometry') or values.get('geojson')
+        try:
+            if geometry_raw:
+                geometry=json.loads(geometry_raw)
+            elif values.get('wkt'):
+                from shapely import from_wkt
+                from shapely.geometry import mapping
+                geometry=mapping(from_wkt(values['wkt']))
+            elif all(values.get(key) for key in ('west','south','east','north')):
+                west,south,east,north=(float(values[key]) for key in ('west','south','east','north'))
+                geometry={'type':'Polygon','coordinates':[[[west,south],[east,south],[east,north],[west,north],[west,south]]]}
+            else:
+                raise ValueError('нужна колонка geometry/geojson, wkt или west,south,east,north')
+            geo=validate_geometry(geometry)
+        except Exception as exc:
+            raise ValueError(f'Строка {index}: {exc}') from exc
+        result.append({'geo':geo,'name':values.get('name') or f'Участок {index-1}','region':values.get('region',''),'crop':values.get('crop',''),'cadastral':values.get('cadastralnumber') or values.get('cadastral_number','')})
+    return result
 
 
 def create_app(config=None):
@@ -161,6 +204,35 @@ def create_app(config=None):
                 raise BadRequest('Дождитесь завершения обработки перед удалением участка.')
             c.execute('DELETE FROM polygons WHERE id=?',(object_id,))
         return jsonify(message='Участок и его результаты удалены.')
+
+    @app.post('/api/polygons/import-csv')
+    @require_user
+    def import_polygons_csv():
+        """Импорт контуров с атомарной записью: ошибочная строка не создаёт частичный набор."""
+        limit('polygon-csv:'+str(g.user['id']),6,3600)
+        upload=request.files.get('file')
+        if not upload or not upload.filename.lower().endswith('.csv'):
+            raise BadRequest('Выберите CSV-файл участков.')
+        try:
+            rows=csv_rows(upload)
+        except ValueError as exc:
+            raise BadRequest(str(exc)) from exc
+        project_id=request.form.get('projectId') or None
+        with db(immediate=True) as c:
+            if project_id:
+                owned(c,'projects',project_id)
+            existing=c.execute('SELECT COUNT(*) FROM polygons WHERE user_id=?',(g.user['id'],)).fetchone()[0]
+            if existing+len(rows)>100:
+                raise BadRequest(f'Лимит аккаунта: 100 участков. Можно добавить ещё {100-existing}.')
+            now=int(time.time()); created=[]
+            for row in rows:
+                cad=text_field(row['cadastral'],'Кадастровый номер',40)
+                if cad and not re.fullmatch(r'\d{2}:\d{2}:\d{6,7}:\d{1,10}',cad):
+                    raise BadRequest(f'Некорректный кадастровый номер: {cad}.')
+                object_id=uuid.uuid4().hex; geo=row['geo']
+                c.execute('INSERT INTO polygons VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)',(object_id,g.user['id'],project_id,text_field(row['name'],'Название',120,True),text_field(row['region'],'Регион',200),text_field(row['crop'],'Культура',80),dumps(geo['geometry']),geo['area_ha'],geo['latitude'],geo['longitude'],'CSV',cad,now))
+                created.append(object_id)
+        return jsonify(created=len(created),polygonIds=created),201
 
     @app.post('/api/polygons/<object_id>/analyze')
     @require_user
