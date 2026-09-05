@@ -1,0 +1,11 @@
+{
+  "version": "v20",
+  "kind": "source_experts_v1 + dataset_prediction",
+  "modelSha256": "c3279bb0f11ae3d04fa2ebecc423622c51765344954e797d998b71d71f41f46b8",
+  "inputSha256": "f7ba087818175ea644fc9fe652c6a3874b5bfcde7df197d3e7541cb95876f855",
+  "submissionSha256": "163bbe8b46dc367362521214988e936191923c97b825ad4072f3dfebd01d7905",
+  "predictionRows": 2323,
+  "method": "OOF-стекинг целевых полей с поправкой на сдвиг распределения",
+  "fallback": "Универсальные эксперты Sentinel-2, Landsat и MODIS",
+  "privateGroundTruthUsed": false
+}

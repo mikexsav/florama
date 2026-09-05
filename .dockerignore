@@ -1,0 +1,10 @@
+.git
+.runtime
+.venv
+__pycache__
+.pytest_cache
+artifacts
+data
+*.sqlite3*
+*.log
+node_modules

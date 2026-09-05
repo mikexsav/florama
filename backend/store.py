@@ -1,4 +1,5 @@
 """SQLite с транзакциями, миграциями без удаления существующих аккаунтов."""
+
 import json
 import os
 import sqlite3
@@ -7,12 +8,12 @@ from pathlib import Path
 
 
 def connect(path=None):
-    path = path or os.getenv('DB_PATH', '/opt/florama/data/florama.sqlite3')
+    path = path or os.getenv("DB_PATH", "/opt/florama/data/florama.sqlite3")
     Path(path).parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(path, timeout=30)
     conn.row_factory = sqlite3.Row
-    conn.execute('PRAGMA foreign_keys=ON')
-    conn.execute('PRAGMA busy_timeout=30000')
+    conn.execute("PRAGMA foreign_keys=ON")
+    conn.execute("PRAGMA busy_timeout=30000")
     return conn
 
 
@@ -21,7 +22,7 @@ def transaction(path=None, immediate=False):
     conn = connect(path)
     try:
         if immediate:
-            conn.execute('BEGIN IMMEDIATE')
+            conn.execute("BEGIN IMMEDIATE")
         yield conn
         conn.commit()
     except Exception:
@@ -33,8 +34,8 @@ def transaction(path=None, immediate=False):
 
 def migrate(path=None):
     with transaction(path) as c:
-        c.execute('PRAGMA journal_mode=WAL')
-        c.executescript('''
+        c.execute("PRAGMA journal_mode=WAL")
+        c.executescript("""
         CREATE TABLE IF NOT EXISTS users (
           id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT UNIQUE NOT NULL,
           first_name TEXT NOT NULL DEFAULT '', last_name TEXT NOT NULL DEFAULT '', created_at INTEGER NOT NULL);
@@ -74,11 +75,13 @@ def migrate(path=None):
           id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
           kind TEXT NOT NULL, message TEXT NOT NULL, request_id TEXT NOT NULL DEFAULT '', created_at INTEGER NOT NULL);
         CREATE TABLE IF NOT EXISTS cache (key TEXT PRIMARY KEY, value TEXT NOT NULL, expires_at INTEGER NOT NULL);
-        ''')
-        columns = {row['name'] for row in c.execute('PRAGMA table_info(codes)')}
-        if 'mode' not in columns:
-            c.execute("ALTER TABLE codes ADD COLUMN mode TEXT NOT NULL DEFAULT 'legacy'")
+        """)
+        columns = {row["name"] for row in c.execute("PRAGMA table_info(codes)")}
+        if "mode" not in columns:
+            c.execute(
+                "ALTER TABLE codes ADD COLUMN mode TEXT NOT NULL DEFAULT 'legacy'"
+            )
 
 
 def dumps(value):
-    return json.dumps(value, ensure_ascii=False, allow_nan=False, separators=(',', ':'))
+    return json.dumps(value, ensure_ascii=False, allow_nan=False, separators=(",", ":"))

@@ -4,8 +4,7 @@ __pycache__/
 .env
 *.sqlite3*
 data/raw/
-artifacts/specs/
-artifacts/browser/
+artifacts/
 .venv/
 *.log
 node_modules/
