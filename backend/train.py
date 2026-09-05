@@ -33,7 +33,7 @@ def train(path, output):
     weights = [0.,.25,.5,.75,1.]
     total_errors = {w:[] for w in weights}
     for name,test in splits.items():
-        model = HistGradientBoostingRegressor(max_iter=220,max_leaf_nodes=15,l2_regularization=8,learning_rate=.06,random_state=42)
+        model = HistGradientBoostingRegressor(max_iter=350,max_leaf_nodes=23,l2_regularization=10,learning_rate=.045,random_state=42)
         model.fit(feats.loc[~test], (target-linear)[~test])
         correction = model.predict(feats.loc[test])
         variants = {'nearest_mean':scores(target[test],mean[test]), 'linear':scores(target[test],linear[test]), 'pchip':scores(target[test],pchip[test])}
@@ -45,14 +45,14 @@ def train(path, output):
         print(name,json.dumps(variants),flush=True)
     weight = min(weights,key=lambda w:np.mean(total_errors[w]))
     # Финальный артефакт обучается на всех reference-полигонах; private не используется.
-    model = HistGradientBoostingRegressor(max_iter=220,max_leaf_nodes=15,l2_regularization=8,learning_rate=.06,random_state=42)
+    model = HistGradientBoostingRegressor(max_iter=350,max_leaf_nodes=23,l2_regularization=10,learning_rate=.045,random_state=42)
     model.fit(feats,target-linear)
     output = Path(output)
     output.mkdir(parents=True,exist_ok=True)
     joblib.dump({'model':model,'columns':list(feats.columns),'weight':weight,'seed':42},output/'gap_model.joblib')
     report['selectedWeight'] = weight
     report['evaluationNote'] = 'Метрики на искусственных пропусках reference train, не скрытая метрика организаторов. Вес выбран по этим validation splits.'
-    report['model'] = {'algorithm':'HistGradientBoosting residual + linear','max_iter':220,'max_leaf_nodes':15,'l2_regularization':8,'learning_rate':.06}
+    report['model'] = {'algorithm':'HistGradientBoosting residual + linear + crop buckets','max_iter':350,'max_leaf_nodes':23,'l2_regularization':10,'learning_rate':.045}
     (output/'metrics.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
     print('selected_weight',weight,flush=True)
 

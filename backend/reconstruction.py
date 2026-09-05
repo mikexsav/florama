@@ -80,6 +80,11 @@ def build_features(frame):
         feat = {'doy':doy, 'year':dates.dt.year.to_numpy(), 'sin':np.sin(2*np.pi*doy/365.25), 'cos':np.cos(2*np.pi*doy/365.25)}
         crops = group.get('crop_type', pd.Series('',index=group.index)).fillna('').astype(str)
         feat['crop'] = np.array([int(hashlib.sha256(v.encode()).hexdigest()[:6],16)%10000 for v in crops])
+        # Категория культуры нужна модели как отдельный признак, а не как случайный порядок чисел.
+        # Хеш-слоты стабильны между train и новым CSV и не раскрывают идентификаторы участков.
+        crop_slots=np.array([int(hashlib.sha256(v.encode()).hexdigest()[:8],16)%16 for v in crops])
+        for slot in range(16):
+            feat['crop_bucket_'+str(slot)]=(crop_slots==slot).astype(float)
         for col in DYNAMIC[:11]:
             y = pd.to_numeric(group.get(col,pd.Series(np.nan,index=group.index)), errors='coerce').to_numpy(dtype=float)
             if 'ndvi' in col:
