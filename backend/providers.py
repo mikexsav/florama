@@ -16,7 +16,10 @@ USER_AGENT = 'Florama/1.0 (+https://crewloom.ru; agricultural monitoring)'
 def http():
     session = requests.Session()
     session.headers['User-Agent'] = USER_AGENT
-    session.mount('https://', HTTPAdapter(max_retries=Retry(total=2,backoff_factor=.5,status_forcelist=[429,502,503,504],allowed_methods=['GET','POST'])))
+    # Каталог иногда обрывает TCP после успешного TLS. Повторяем отдельно
+    # ошибки соединения/чтения и временные HTTP-ответы, не ретрая клиентские ошибки.
+    retry=Retry(total=5,connect=5,read=5,status=5,backoff_factor=.8,status_forcelist=[408,425,429,500,502,503,504],allowed_methods=['GET','POST'],raise_on_status=False)
+    session.mount('https://', HTTPAdapter(max_retries=retry,pool_connections=4,pool_maxsize=4))
     return session
 
 
@@ -27,10 +30,23 @@ def fetch_json(url, params=None, body=None, ttl=3600):
         cached = c.execute('SELECT value FROM cache WHERE key=? AND expires_at>?',(key,now)).fetchone()
     if cached:
         return json.loads(cached['value'])
-    with http() as s:
-        response = s.post(url,json=body,timeout=(10,35)) if body is not None else s.get(url,params=params,timeout=(10,35))
-        response.raise_for_status()
-        value = response.json()
+    last_error=None
+    # Retry также на уровне запроса: некоторые обрывы происходят после ответа
+    # прокси и не распознаются urllib3 как безопасно повторяемые.
+    for attempt in range(3):
+        try:
+            with http() as s:
+                response = s.post(url,json=body,timeout=(12,60)) if body is not None else s.get(url,params=params,timeout=(12,60))
+                response.raise_for_status()
+                value = response.json()
+            break
+        except (requests.ConnectionError,requests.Timeout) as exc:
+            last_error=exc
+            if attempt==2:
+                raise
+            time.sleep(1.5*(attempt+1))
+    else:
+        raise last_error
     with transaction() as c:
         c.execute('DELETE FROM cache WHERE expires_at<?',(now,))
         c.execute('INSERT OR REPLACE INTO cache VALUES (?,?,?)',(key,dumps(value),now+ttl))
@@ -83,7 +99,12 @@ def weather(lat, lon, start, end):
 
 
 def scenes(geometry,start,end,limit=24):
-    data = fetch_json(STAC+'/search',body={'collections':['sentinel-2-l2a'],'intersects':geometry,'datetime':start+'T00:00:00Z/'+end+'T23:59:59Z','limit':100,'query':{'eo:cloud_cover':{'lt':75}}},ttl=86400)
+    # Earth Search может очень долго строить intersects-ответы с page limit=100.
+    # Берём компактную страницу по bbox; точное отсечение выполняет raster mask
+    # конкретного Polygon/MultiPolygon в satellite.analyze_scene.
+    from shapely.geometry import shape
+    page_limit=max(10,min(24,limit+6))
+    data = fetch_json(STAC+'/search',body={'collections':['sentinel-2-l2a'],'bbox':list(shape(geometry).bounds),'datetime':start+'T00:00:00Z/'+end+'T23:59:59Z','limit':page_limit,'query':{'eo:cloud_cover':{'lt':75}}},ttl=86400)
     features = data.get('features',[])
     # Сначала выбираем наиболее безоблачный тайл на каждую дату.
     by_day={}
@@ -96,4 +117,4 @@ def scenes(geometry,start,end,limit=24):
     if count>limit:
         import numpy as np
         chosen=[chosen[i] for i in np.linspace(0,count-1,limit,dtype=int)]
-    return chosen, {'catalogReturned':len(features),'uniqueDates':count,'selected':len(chosen),'capped':count>limit or bool(data.get('links') and any(v.get('rel')=='next' for v in data['links']))}
+    return chosen, {'catalogReturned':len(features),'uniqueDates':count,'selected':len(chosen),'pageLimit':page_limit,'spatialSearch':'bbox; exact mask on raster','capped':count>limit or bool(data.get('links') and any(v.get('rel')=='next' for v in data['links']))}
